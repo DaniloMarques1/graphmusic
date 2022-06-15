@@ -2,10 +2,11 @@ package model
 
 import (
 	"context"
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type Music struct {
@@ -15,11 +16,17 @@ type Music struct {
 }
 
 type MusicRepository interface {
+	// Stores a Music into database
 	Save(music *Music) error
+	// Return a list of Music
 	FindAll() ([]Music, error)
+	// Return a Music filtering by name
 	FindByName(name string) (*Music, error)
+	// Update a music whith the given name
 	UpdateByName(name string, music *Music) (*Music, error)
+	// Remove a music whith the given name
 	RemoveByName(name string) (*Music, error)
+	// Remove a music whith the given id
 	RemoveById(id string) (*Music, error)
 }
 
@@ -62,7 +69,7 @@ func (mr *MusicRepositoryImpl) FindByName(name string) (*Music, error) {
 	var music Music
 	err := collection.FindOne(
 		context.Background(),
-		bson.D{{"name", name}},
+		bson.D{{Key: "name", Value: name}},
 		&options.FindOneOptions{},
 	).Decode(&music)
 	if err != nil {
@@ -77,7 +84,7 @@ func (mr *MusicRepositoryImpl) RemoveByName(name string) (*Music, error) {
 	var music Music
 	err := collection.FindOneAndDelete(
 		context.Background(),
-		bson.D{{"name", name}},
+		bson.D{{Key: "name", Value: name}},
 		&options.FindOneAndDeleteOptions{},
 	).Decode(&music)
 
@@ -90,11 +97,11 @@ func (mr *MusicRepositoryImpl) RemoveByName(name string) (*Music, error) {
 func (mr *MusicRepositoryImpl) UpdateByName(name string, music *Music) (*Music, error) {
 	collection := mr.client.Database(mr.dbName).Collection(mr.collection)
 	var updatedMusic Music
-	update := bson.D{{"$set", music}}
+	update := bson.D{{Key: "$set", Value: music}}
 	opt := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	err := collection.FindOneAndUpdate(
 		context.Background(),
-		bson.D{{"name", name}},
+		bson.D{{Key: "name", Value: name}},
 		update,
 		opt,
 	).Decode(&updatedMusic)
@@ -109,7 +116,7 @@ func (mr *MusicRepositoryImpl) RemoveById(id string) (*Music, error) {
 	var music Music
 	err := collection.FindOneAndDelete(
 		context.Background(),
-		bson.D{{"_id", id}},
+		bson.D{{Key: "_id", Value: id}},
 		&options.FindOneAndDeleteOptions{},
 	).Decode(&music)
 	if err != nil {

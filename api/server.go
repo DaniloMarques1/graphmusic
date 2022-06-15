@@ -33,6 +33,7 @@ func NewServer(port string) (*Server, error) {
 		return nil, err
 	}
 	router := chi.NewRouter()
+	router.Use(cors)
 	return &Server{Router: router, port: port, Client: client}, nil
 }
 
@@ -129,7 +130,6 @@ func (s *Server) Init() {
 			Query:    query,
 			Mutation: mutation,
 		})
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,4 +172,11 @@ func (s *Server) executeQuery(query string, schema graphql.Schema) (interface{},
 func RespondERR(w http.ResponseWriter, statusCode int, msg string) {
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(&Error{Message: msg})
+}
+
+func cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		next.ServeHTTP(w, r)
+	})
 }
